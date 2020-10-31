@@ -10,8 +10,10 @@ import requests
 from homeassistant.core import HomeAssistant
 import homeassistant.helpers.config_validation as cv
 from homeassistant.helpers.event import track_time_interval
-from homeassistant.const import (CONF_API_KEY, CONF_EMAIL, HTTP_OK)
+from homeassistant.const import (
+    CONF_API_KEY, CONF_EMAIL, HTTP_OK)
 from .const import (
+    CONF_API_TOKEN,
     CONF_RECORDS,
     CONF_DOMAINS,
     CONF_DOMAIN_NAME,
@@ -45,7 +47,8 @@ IP_GETTER_SCHEMA = vol.Schema(
 CONFIG_SCHEMA = vol.Schema({
     DOMAIN: vol.Schema({
         vol.Required(CONF_EMAIL): cv.string,
-        vol.Required(CONF_API_KEY): cv.string,
+        vol.Required(CONF_API_KEY): cv.positive_int,
+        vol.Required(CONF_API_TOKEN): cv.string,
         vol.Optional(CONF_IP_GETTER): IP_GETTER_SCHEMA,
         vol.Required(CONF_DOMAINS): vol.All(cv.ensure_list, [DOMAIN_SCHEMA]),
     }),
@@ -64,11 +67,25 @@ def _ip_need_update(ip):
     return need_update
 
 
+def dnspod_api(url, data_params, header):
+    r = requests.post(
+        url, data=data_params, headers=header)
+    if not r.status_code == HTTP_OK:
+        _LOGGER.warn(f"visit dnspod api failed, {r.text}")
+        return {"message": "visit api failed"}
+    j = r.json()
+    status = j.get("status", {})
+    j["message"] = status.get('message', 'unknown error')
+    if not "1" == status.get("code", "-1"):
+        _LOGGER.warn(
+            f"visit dnspod api failed, {status.get('message', 'unknown error')}")
+    return j
+
+
 def get_record_ids(domain, sdns, data_params, header):
     result = []
-    resp = requests.post(
-        DNSPOD_ID_URL, data=data_params, headers=header)
-    records = resp.json().get('records', {})
+    r = dnspod_api(DNSPOD_ID_URL, data_params, header)
+    records = r.get('records', {})
     for item in records:
         sd_name = item.get('name')
         if sd_name in sdns:
@@ -79,7 +96,8 @@ def get_record_ids(domain, sdns, data_params, header):
                 "get record_id: %s for sub_domain %s" % (
                     item.get('id'), sd_name))
     if sdns:
-        _LOGGER.warning(f'Could not find sub_domain {",".join(sdns)}, Please check configuration')
+        _LOGGER.warning(
+            f'Could not find sub_domain {",".join(sdns)}, Please check configuration')
     return result
 
 
@@ -107,7 +125,7 @@ def setup(hass: HomeAssistant, config: Dict) -> bool:
     header = {
         'User-Agent': 'Client/0.0.1 ({})'.format(
             conf[CONF_EMAIL])}
-    token = conf[CONF_API_KEY]
+    token = f'{conf[CONF_API_KEY]},{conf[CONF_API_TOKEN]}'
     data_params_template = {
         'login_token': token,
         'format': 'json',
@@ -147,8 +165,5 @@ def update_dnspod(params, header, ip_getter=None):
     # new ip found
     logging.info("new ip found: %s", current_ip)
     for param in params:
-        r = requests.post(
-            DNSPOD_UPDATE_URL, data=param, headers=header)
-        if not r.status_code == HTTP_OK:
-            logging.error("update ip failed: %s", r.text)
-        logging.info("update ip: %s", r.text)
+        r = dnspod_api(DNSPOD_UPDATE_URL, param, header)
+        logging.info(r.get("message", "unkown error"))

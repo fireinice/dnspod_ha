@@ -10,6 +10,7 @@ CONF_DOMAIN_NAME = "name"
 CONF_IP_GETTER = "ip_getter"
 CONF_LINKSYS = 'linksys'
 CONF_EXTERNAL_URLS = 'external_urls'
+CONF_API_TOKEN = 'api_token'
 
 # Data
 DATA_UPDATE_INTERVAL = "update_interval"

@@ -12,7 +12,8 @@ Setup requires an API key created from dnspod
 ```yaml
 dnspod:
   email: your@email.com
-  api_key: '123432,d7d341ed7c0014d0e6c3bc379c9baf30' (api_id,api_token)
+  api_key: api id from dnspod
+  api_token: api token from dnspod
   ip_getter:
     linksys: 192.168.1.1
     external_urls: 
@@ -25,7 +26,9 @@ dnspod:
 ## Intro
 `email` (Required) your dnspod user account
 
-`api_key` (Required) api key get from dnspod
+`api_key` (Required) api id get from dnspod
+
+`api_token` (Required) api token get from dnspod
 
 `domains` (Required) a list of the domains that you want to update
 
