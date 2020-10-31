@@ -1,0 +1,8 @@
+{
+    "domain": "dnspod",
+    "name": "dnspod updater",
+    "documentation": "",
+    "requirements": [],
+    "dependencies": [],
+    "codeowners": ["@fireinice"]
+}

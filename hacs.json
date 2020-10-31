@@ -1,0 +1,5 @@
+{
+    "name": "DNSPod Client",
+    "homeassistant": "0.116",
+    "render_readme": true
+}
