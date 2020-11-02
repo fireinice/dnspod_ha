@@ -15,7 +15,6 @@ dnspod:
   api_key: api id from dnspod
   api_token: api token from dnspod
   ip_getter:
-    linksys: 192.168.1.1
     external_urls: 
       - https://icanhazip.com
   domains:
@@ -39,9 +38,6 @@ dnspod:
 `ip_getter` (Optional) some extra confs to config how to get external ip, the components contains some methods to get it from outside website out of box, so basically you can ignore the confs below.
 	
   `external urls` (Optional) some websites you want to get your external ip from, the websites should return a html page contains the ip, just like https://icanhazip.com
-
-  `linksys`: (Optional) a handy method to get external ip directly from your linksys router, the value of it should be the ip address of your router
-	
 
 
 # Other Infos

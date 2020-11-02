@@ -11,7 +11,9 @@ from homeassistant.core import HomeAssistant
 import homeassistant.helpers.config_validation as cv
 from homeassistant.helpers.event import track_time_interval
 from homeassistant.const import (
-    CONF_API_KEY, CONF_EMAIL, HTTP_OK)
+    CONF_API_KEY, CONF_EMAIL, HTTP_OK, CONF_PLATFORM, CONF_HOST)
+from homeassistant.components.device_tracker.const import DOMAIN \
+    as DEVICE_TRACKER_DOMAIN
 from .const import (
     CONF_API_TOKEN,
     CONF_RECORDS,
@@ -56,6 +58,19 @@ CONFIG_SCHEMA = vol.Schema({
 
 _DP_IP_POOL = {}
 MAX_IP_TIMEDELTA = timedelta(minutes=DEFAULT_UPDATE_INTERVAL*10)
+
+
+def _extra_ip_getter(config, ip_getter_conf):
+    if DEVICE_TRACKER_DOMAIN not in config:
+        return ip_getter_conf
+    for item in config[DEVICE_TRACKER_DOMAIN]:
+        if "linksys_smart" == item.get(CONF_PLATFORM, None):
+            router_ip = item.get(CONF_HOST)
+            if router_ip:
+                if ip_getter_conf is None:
+                    ip_getter_conf = {}
+                ip_getter_conf[CONF_LINKSYS] = router_ip
+    return ip_getter_conf
 
 
 def _ip_need_update(ip):
@@ -131,19 +146,19 @@ def setup(hass: HomeAssistant, config: Dict) -> bool:
         'format': 'json',
         'record_line': '默认'
     }
+    ip_getter_conf = _extra_ip_getter(config, conf.get(CONF_IP_GETTER))
+
     update_url_params = get_update_params(
         data_params_template, conf[CONF_DOMAINS], header)
     _LOGGER.debug(update_url_params)
 
     def update_records_interval(now):
         """Set up recurring update."""
-        update_dnspod(update_url_params, header,
-                      conf.get(CONF_IP_GETTER, None))
+        update_dnspod(update_url_params, header, ip_getter_conf)
 
     def update_records_service(now):
         """Set up service for manual trigger."""
-        update_dnspod(update_url_params, header,
-                      conf.get(CONF_IP_GETTER, None))
+        update_dnspod(update_url_params, header, ip_getter_conf)
 
     update_interval = timedelta(minutes=DEFAULT_UPDATE_INTERVAL)
     track_time_interval(hass, update_records_interval, update_interval)
