@@ -1,6 +1,6 @@
+from http import HTTPStatus
 import logging
 import requests
-from homeassistant.const import HTTP_OK
 from .const import DEFAULT_EXTERNAL_URLS, IP_REGEX
 
 _LOGGER = logging.getLogger(__name__)
@@ -40,7 +40,7 @@ def _make_linksys_request(url, action):
 def get_ip_from_linksys_router(gw_ip):
     url = f"http://{gw_ip}/JNAP/"
     r = _make_linksys_request(url, 'router/GetWANStatus')
-    if not r.status_code == HTTP_OK:
+    if not r.status_code == HTTPStatus.OK:
         _LOGGER.error("get ip failed: %s", r.text)
         return None
     ip = r.json()\
