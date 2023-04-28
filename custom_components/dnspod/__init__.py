@@ -118,8 +118,8 @@ def get_record_ids(domain, sdns, data_params, header):
 
 def get_update_params(data_params_template, domains, header):
     update_url_params = []
-    data_params = data_params_template.copy()
     for item in domains:
+        data_params = data_params_template.copy()
         domain_name = item[CONF_DOMAIN_NAME]
         records = item[CONF_RECORDS]
         data_params['domain'] = domain_name
