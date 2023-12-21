@@ -1,6 +1,7 @@
 # -*- coding: utf-8 -*-
 """Update the IP addresses of your DNSPod DNS records."""
 from datetime import datetime, timedelta
+from http import HTTPStatus
 import logging
 from typing import Dict
 
@@ -11,7 +12,7 @@ from homeassistant.core import HomeAssistant
 import homeassistant.helpers.config_validation as cv
 from homeassistant.helpers.event import track_time_interval
 from homeassistant.const import (
-    CONF_API_KEY, CONF_EMAIL, HTTP_OK, CONF_PLATFORM, CONF_HOST)
+    CONF_API_KEY, CONF_EMAIL, CONF_PLATFORM, CONF_HOST)
 from homeassistant.components.device_tracker.const import DOMAIN \
     as DEVICE_TRACKER_DOMAIN
 from .const import (
@@ -85,7 +86,7 @@ def _ip_need_update(ip):
 def dnspod_api(url, data_params, header):
     r = requests.post(
         url, data=data_params, headers=header)
-    if not r.status_code == HTTP_OK:
+    if not r.status_code == HTTPStatus.OK:
         _LOGGER.warn(f"visit dnspod api failed, {r.text}")
         return {"message": "visit api failed"}
     j = r.json()
