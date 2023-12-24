@@ -4,5 +4,6 @@
     "documentation": "",
     "requirements": [],
     "dependencies": [],
+    "version": "0.0.3",
     "codeowners": ["@fireinice"]
 }

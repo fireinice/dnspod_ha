@@ -84,6 +84,7 @@ def _ip_need_update(ip):
 
 
 def dnspod_api(url, data_params, header):
+    header.update({"connection": "close"})
     r = requests.post(
         url, data=data_params, headers=header)
     if not r.status_code == HTTPStatus.OK:

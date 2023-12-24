@@ -33,7 +33,10 @@ def _make_linksys_request(url, action):
             "action": f"http://linksys.com/jnap/{action}"
         }
     ]
-    headers = {"X-JNAP-Action": "http://linksys.com/jnap/core/Transaction"}
+    headers = {
+        "X-JNAP-Action": "http://linksys.com/jnap/core/Transaction",
+        'connection': 'close'
+    }
     return requests.post(url, timeout=3, headers=headers, json=data)
 
 
@@ -51,7 +54,7 @@ def get_ip_from_linksys_router(gw_ip):
 
 def get_ip_from_website(url):
     try:
-        r = requests.get(url=url, timeout=10)
+        r = requests.get(url=url, timeout=10, header={'connection': 'close'})
         return IP_REGEX.match(r.text).group(1)
     except Exception as e:
         _LOGGER.warning(f"get ip from {url} FAILED, error: {str(e)}")
