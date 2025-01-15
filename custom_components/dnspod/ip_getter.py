@@ -46,7 +46,9 @@ def get_ip_from_linksys_router(gw_ip):
     ip = (
         r.json()
         .get("responses", [{}])[0]
-        .get("output", {})["wanConnection"]["ipAddress"]
+        .get("output", {})
+        .get("wanConnection", {})
+        .get("ipAddress")
     )
     return ip
 

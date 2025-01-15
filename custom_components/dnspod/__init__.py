@@ -11,10 +11,10 @@ import requests
 from homeassistant.core import HomeAssistant
 import homeassistant.helpers.config_validation as cv
 from homeassistant.helpers.event import track_time_interval
-from homeassistant.const import (
-    CONF_API_KEY, CONF_EMAIL, CONF_PLATFORM, CONF_HOST)
-from homeassistant.components.device_tracker.const import DOMAIN \
-    as DEVICE_TRACKER_DOMAIN
+from homeassistant.const import CONF_API_KEY, CONF_EMAIL, CONF_PLATFORM, CONF_HOST
+from homeassistant.components.device_tracker.const import (
+    DOMAIN as DEVICE_TRACKER_DOMAIN,
+)
 from .const import (
     CONF_API_TOKEN,
     CONF_RECORDS,
@@ -28,7 +28,7 @@ from .const import (
     DOMAIN,
     SERVICE_UPDATE_RECORDS,
     DNSPOD_ID_URL,
-    DNSPOD_UPDATE_URL
+    DNSPOD_UPDATE_URL,
 )
 from .ip_getter import get_ip
 
@@ -38,27 +38,34 @@ DOMAIN_SCHEMA = vol.Schema(
     {
         vol.Required(CONF_DOMAIN_NAME): cv.string,
         vol.Required(CONF_RECORDS): vol.All(cv.ensure_list, [cv.string]),
-    })
+    }
+)
 
 IP_GETTER_SCHEMA = vol.Schema(
     {
         vol.Optional(CONF_LINKSYS): cv.string,
-        vol.Optional(CONF_EXTERNAL_URLS): vol.All(cv.ensure_list, [cv.url])
-    })
+        vol.Optional(CONF_EXTERNAL_URLS): vol.All(cv.ensure_list, [cv.url]),
+    }
+)
 
 
-CONFIG_SCHEMA = vol.Schema({
-    DOMAIN: vol.Schema({
-        vol.Required(CONF_EMAIL): cv.string,
-        vol.Required(CONF_API_KEY): cv.positive_int,
-        vol.Required(CONF_API_TOKEN): cv.string,
-        vol.Optional(CONF_IP_GETTER): IP_GETTER_SCHEMA,
-        vol.Required(CONF_DOMAINS): vol.All(cv.ensure_list, [DOMAIN_SCHEMA]),
-    }),
-}, extra=vol.ALLOW_EXTRA)
+CONFIG_SCHEMA = vol.Schema(
+    {
+        DOMAIN: vol.Schema(
+            {
+                vol.Required(CONF_EMAIL): cv.string,
+                vol.Required(CONF_API_KEY): cv.positive_int,
+                vol.Required(CONF_API_TOKEN): cv.string,
+                vol.Optional(CONF_IP_GETTER): IP_GETTER_SCHEMA,
+                vol.Required(CONF_DOMAINS): vol.All(cv.ensure_list, [DOMAIN_SCHEMA]),
+            }
+        ),
+    },
+    extra=vol.ALLOW_EXTRA,
+)
 
 _DP_IP_POOL = {}
-MAX_IP_TIMEDELTA = timedelta(minutes=DEFAULT_UPDATE_INTERVAL*10)
+MAX_IP_TIMEDELTA = timedelta(minutes=DEFAULT_UPDATE_INTERVAL * 10)
 
 
 def _extra_ip_getter(config, ip_getter_conf):
@@ -76,45 +83,44 @@ def _extra_ip_getter(config, ip_getter_conf):
 
 def _ip_need_update(ip):
     now = datetime.now()
-    need_update = not (
-        ip in _DP_IP_POOL
-        and _DP_IP_POOL[ip] - now < MAX_IP_TIMEDELTA)
+    need_update = not (ip in _DP_IP_POOL and _DP_IP_POOL[ip] - now < MAX_IP_TIMEDELTA)
     _DP_IP_POOL[ip] = now
     return need_update
 
 
 def dnspod_api(url, data_params, header):
     header.update({"connection": "close"})
-    r = requests.post(
-        url, data=data_params, headers=header)
+    r = requests.post(url, data=data_params, headers=header)
     if not r.status_code == HTTPStatus.OK:
         _LOGGER.warn(f"visit dnspod api failed, {r.text}")
         return {"message": "visit api failed"}
     j = r.json()
     status = j.get("status", {})
-    j["message"] = status.get('message', 'unknown error')
+    j["message"] = status.get("message", "unknown error")
     if not "1" == status.get("code", "-1"):
         _LOGGER.warn(
-            f"visit dnspod api failed, {status.get('message', 'unknown error')}")
+            f"visit dnspod api failed, {status.get('message', 'unknown error')}"
+        )
     return j
 
 
 def get_record_ids(domain, sdns, data_params, header):
     result = []
     r = dnspod_api(DNSPOD_ID_URL, data_params, header)
-    records = r.get('records', {})
+    records = r.get("records", {})
     for item in records:
-        sd_name = item.get('name')
+        sd_name = item.get("name")
         if sd_name in sdns:
-            result.append((sd_name, item.get('id')))
-            _ip_need_update(item.get('value'))
+            result.append((sd_name, item.get("id")))
+            _ip_need_update(item.get("value"))
             sdns.remove(sd_name)
             _LOGGER.debug(
-                "get record_id: %s for sub_domain %s" % (
-                    item.get('id'), sd_name))
+                "get record_id: %s for sub_domain %s" % (item.get("id"), sd_name)
+            )
     if sdns:
         _LOGGER.warning(
-            f'Could not find sub_domain {",".join(sdns)}, Please check configuration')
+            f'Could not find sub_domain {",".join(sdns)}, Please check configuration'
+        )
     return result
 
 
@@ -124,12 +130,11 @@ def get_update_params(data_params_template, domains, header):
         data_params = data_params_template.copy()
         domain_name = item[CONF_DOMAIN_NAME]
         records = item[CONF_RECORDS]
-        data_params['domain'] = domain_name
-        record_infos = get_record_ids(
-            domain_name, records, data_params, header)
-        for (record, rid) in record_infos:
-            data_params['sub_domain'] = record
-            data_params['record_id'] = rid
+        data_params["domain"] = domain_name
+        record_infos = get_record_ids(domain_name, records, data_params, header)
+        for record, rid in record_infos:
+            data_params["sub_domain"] = record
+            data_params["record_id"] = rid
             update_url_params.append(data_params.copy())
     return update_url_params
 
@@ -139,19 +144,14 @@ def setup(hass: HomeAssistant, config: Dict) -> bool:
     conf = config.get(DOMAIN, None)
     if not conf:
         return False
-    header = {
-        'User-Agent': 'Client/0.0.1 ({})'.format(
-            conf[CONF_EMAIL])}
-    token = f'{conf[CONF_API_KEY]},{conf[CONF_API_TOKEN]}'
-    data_params_template = {
-        'login_token': token,
-        'format': 'json',
-        'record_line': '默认'
-    }
+    header = {"User-Agent": "Client/0.0.1 ({})".format(conf[CONF_EMAIL])}
+    token = f"{conf[CONF_API_KEY]},{conf[CONF_API_TOKEN]}"
+    data_params_template = {"login_token": token, "format": "json", "record_line": "默认"}
     ip_getter_conf = _extra_ip_getter(config, conf.get(CONF_IP_GETTER))
 
     update_url_params = get_update_params(
-        data_params_template, conf[CONF_DOMAINS], header)
+        data_params_template, conf[CONF_DOMAINS], header
+    )
     _LOGGER.debug(update_url_params)
 
     def update_records_interval(now):
@@ -173,7 +173,7 @@ def update_dnspod(params, header, ip_getter=None):
     _LOGGER.debug("Trying to get ip")
     current_ip = get_ip(ip_getter)
     if not current_ip:
-        logging.error('get current ip FAILED.')
+        logging.error("get current ip FAILED.")
         return
 
     if not _ip_need_update(current_ip):
