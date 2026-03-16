@@ -31,10 +31,11 @@ DNSPOD_ID_URL = "https://{}.List".format(DNSPOD_SERVICE_BASE_URL)
 DNSPOD_UPDATE_URL = "https://{}.Ddns".format(DNSPOD_SERVICE_BASE_URL)
 
 DEFAULT_EXTERNAL_URLS = [
-    "http://myip.ipip.net/",
+    "https://realip.cc/simple",
+    "https://api.ipify.org/"
     "http://www.httpbin.org/ip",
-    "http://54.236.246.173/ip",
-    "http://3.220.112.94/ip",
+    "https://www.ip.cn/api/index?ip=&type=0",
+    "http://myip.ipip.net/",
 ]
 
 IP_REGEX = re.compile(

@@ -39,7 +39,10 @@ def _make_linksys_request(url, action):
 
 def get_ip_from_linksys_router(gw_ip):
     url = f"http://{gw_ip}/JNAP/"
-    r = _make_linksys_request(url, "router/GetWANStatus")
+    try:
+        r = _make_linksys_request(url, "router/GetWANStatus")
+    except Exception as e:
+        return None
     if r is None or not r.status_code == HTTPStatus.OK:
         _LOGGER.error("get ip failed: %s", r.text)
         return None
@@ -55,7 +58,7 @@ def get_ip_from_linksys_router(gw_ip):
 
 def get_ip_from_website(url):
     try:
-        r = requests.get(url=url, timeout=10, header={"connection": "close"})
+        r = requests.get(url=url, timeout=10, headers={"connection": "close"})
         return IP_REGEX.match(r.text).group(1)
     except Exception as e:
         _LOGGER.warning(f"get ip from {url} FAILED, error: {str(e)}")
